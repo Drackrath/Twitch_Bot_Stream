@@ -1,6 +1,6 @@
 import {CLIENT_ID, OAUTH_TOKEN, USER_ID, } from "./constants";
 import axios from "axios";
-import {checkPermissions, splitCommand} from "./app"
+import {checkBadges, checkPermissions, splitCommand} from "./app"
 import tmi from 'tmi.js'
 
 function customModeratorCommands(channel, tags, message, client) {
@@ -10,7 +10,7 @@ function customModeratorCommands(channel, tags, message, client) {
             '!title'
         ]
 
-    if(checkPermissions(tags) == 2) return;
+    if(checkPermissions(checkBadges(tags)) > 1) return;
 
     let command = splitCommand(message);
 
@@ -51,7 +51,6 @@ function customModeratorCommands(channel, tags, message, client) {
                 }else{
                     client.say(channel, `Der Twitch-Kanal Titel wurde geändert!`);
                 }
-                console.log("Der Twitch-Kanal Titel wurde geändert!")
             },
             (error) => {
                 console.log(error);

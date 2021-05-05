@@ -1,4 +1,4 @@
-import {checkPermissions, connectToDatabase, getTimeStamp, splitCommand} from "./app";
+import {checkBadges, checkPermissions, connectToDatabase, getTimeStamp, splitCommand} from "./app";
 
 
 const con = connectToDatabase();
@@ -16,7 +16,7 @@ function customMixedcommands(channel, tags, message, client){
     const command = splitCommand(message);
     const splitstring = message.toLowerCase().split(' ');
 
-    const permission = checkPermissions(tags);
+    const permission = checkPermissions(checkBadges(tags));
 
     // ------------- VERLOSUNG -----------
     if(command[0] === commandNames[0]) {

@@ -81,28 +81,20 @@ const today = getTimeStamp();
 client.on('message', (channel, tags, message, self) => {
     if(self) return;
 
+
+
     if (tags.username === BOT_USERNAME) return;
 
-   // console.log(tags);
+   //console.log(tags);
 
-    let badges = [
-        false, // sub
-        false, // mod
-        false, // premium
-        false // vip
-    ]
+    const badges = checkBadges(tags)
 
-    try{if(tags.badges.subscriber == '1') badges[0] = true}catch{}
-    try{if(tags.mod == true) badges[1] = true}catch{}
-    try{if(tags.badges.premium == '1') badges[2] = true}catch{}
-    try{if(tags.badges.vip == '1') badges[3] = true}catch{}
-
-    console.log(badges);
+    //console.log(badges);
 
     // Add User to Database and count Messages & Status
-    con.query(`INSERT INTO Users VALUES(?,?,?,?,?,?,?) ON DUPLICATE KEY UPDATE 
-    subscriber = ${badges[0]}, moderator = ${badges[1]}, premium = ${badges[2]}, vip = ${badges[3]}, messagecount = messagecount +1;`,
-        [tags['user-id'], tags['display-name'], badges[0], badges[1], badges[2], badges[3], 0] );
+    con.query(`INSERT INTO Users VALUES(?,?,?,?,?,?,?,?) ON DUPLICATE KEY UPDATE 
+    subscriber = ${badges[0]}, moderator = ${badges[1]}, premium = ${badges[2]}, vip = ${badges[3]}, broadcaster = ${badges[4]}, messagecount = messagecount +1;`,
+        [tags['user-id'], tags['display-name'], badges[0], badges[1], badges[2], badges[3], 0, badges[4]] );
 
     // Check User-VIP-Expiration
     if(badges[3]){
@@ -143,6 +135,8 @@ client.on('message', (channel, tags, message, self) => {
         });
     }
 
+    console.log("Permission: " + checkPermissions(badges));
+
     filterTwitchChat(channel, tags, message, client)
 
     if(message.charAt(0) == '!') {
@@ -168,17 +162,38 @@ export function splitCommand(message){
     return [splitcom1,splitcom2];
 }
 
-export function checkPermissions(tags){
-    try{
-        if(tags.badges.broadcaster === '1'){
-            return 0
-        }else if(tags.mod == true) {
-            return 1;
-        }else{
-            return 2;
-        }
-    }catch (e){
-        if(tags.mod == false) return 2;
+export function checkBadges(tags){
+    let badges = [
+        false, // sub
+        false, // mod
+        false, // premium
+        false, // vip
+        false // broadcaster
+    ]
+
+    try{if(tags.badges.subscriber == '1') badges[0] = true}catch{}
+    try{if(tags.mod == true) badges[1] = true}catch{}
+    try{if(tags.badges.premium == '1') badges[2] = true}catch{}
+    try{if(tags.badges.vip == '1') badges[3] = true}catch{}
+    try{if(tags.badges.broadcaster == '1') badges[4] = true}catch{}
+
+    return badges;
+}
+
+export function checkPermissions(badges){
+    if(badges[4] == 1){ // Broadcaster
+        return 0;
+    }else if(badges[1] == 1) { // Moderator
+        return 1;
+    }else if(badges[0] == 1){ // Subscriber
+        return 2; //
+    }else if(badges[3] == 1){ // VIP
+        return  3;
+    }else if(badges[2] == 1){ // Premium
+        return  4;
+    }else{
+        return  5;
     }
+
 }
 console.log('app start')

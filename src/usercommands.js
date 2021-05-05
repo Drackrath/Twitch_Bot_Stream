@@ -23,7 +23,8 @@ function talkResponseTwitchChat(channel, tags, message, client) {
             ['!unlurk', `/me Willkommen Zurück! ${tags.username} VirtualHug`],
             ['!lurk', `/me Viel Spaß beim Lurken ${tags.username} ! PopCorn`],
             ['!name', `/me Bekommst du nicht LUL`],
-            ['!bsg', `/me Bitte keine Zugvorschläge FootYellow`]
+            ['!bsg', `/me Bitte keine Zugvorschläge FootYellow`],
+            ['!clap', `/me Clap drackrFacepalm `]
         ]
 
 
