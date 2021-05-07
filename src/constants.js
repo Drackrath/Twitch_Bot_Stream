@@ -1,8 +1,10 @@
 export const CHANNEL_NAME = '#drackrath';
 export const OAUTH_TOKEN = 'gl4w937x57r1t1wdv9womkng837ciu';
+export const OAUTH_TOKEN_PUBSUB = 'a888pcelk8uea3rrk4wv9arzmzq3d7';
 export const BOT_USERNAME = 'drackrath_bot';
 export const CHANNEL_ID = '4df27254-8028-4406-8d24-253e408c0a17';
 export const CLIENT_ID = 'fcghlfnelymmryxnb7yio5vnxna7mf';
+export const CLIENT_SECRET = 'iatoigtv4b6i8vsi0fx8316dat5jkf';
 
 //User ID is a braodcaster ID is a channel ID
 export const USER_ID = '59480007';

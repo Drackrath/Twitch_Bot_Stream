@@ -10,13 +10,35 @@ function customMixedcommands(channel, tags, message, client){
 
     const commandNames =
         [
-            '!verlosung'
+            '!verlosung',
+            '!weg'
         ]
 
     const command = splitCommand(message);
     const splitstring = message.toLowerCase().split(' ');
 
     const permission = checkPermissions(checkBadges(tags));
+
+
+    //---------------- DELETE CITE ----------
+    if(command[0] === commandNames[1]) {
+        if(command.length < 2) return;
+        if(permission < 2) {
+            con.query(`UPDATE Zitate SET isdeleted = 1 WHERE zitat_id = ${command[1]}`, function (err, result, fields) {
+                if (err) throw err;
+                client.say(channel, `/me Zitat No°${command[1]} wurde entfernt`);
+            });
+        }else if(permission < 4) {
+            con.query(`UPDATE Zitate SET isdeleted = 1 WHERE zitat_id = ${command[1]} AND user_id = ${tags['user-id']}`, function (err, result, fields) {
+                if (err) throw err;
+                if(result.affectedRows == 0){
+                    client.say(channel, `/me Zitat No°${command[1]} existiert nicht, oder du bist nicht der Besitzer!`);
+                }else{
+                    client.say(channel, `/me Zitat No°${command[1]} wurde entfernt`);
+                }
+            });
+        }
+    }
 
     // ------------- VERLOSUNG -----------
     if(command[0] === commandNames[0]) {
@@ -40,7 +62,9 @@ function customMixedcommands(channel, tags, message, client){
                if(isrunning){
                    con.query(`SELECT * FROM Verlosungen where verlosungs_id = ${verlosungs_id} ORDER BY RAND() LIMIT 1`, function (err, result, fields) {
                        if (err) throw err;
+                       try{
                        console.log(result[0].user_id);
+                       }catch{return;}
                        con.query( `UPDATE Verlosungen SET gewinner = 1 WHERE user_id = ${result[0].user_id} AND Verlosungs_id = ${verlosungs_id}`);
                        con.query(`INSERT INTO VipList VALUES(?,?,?,?,?) ON DUPLICATE KEY UPDATE expirationdate = DATE_ADD(expirationdate, interval 14 day), verlosungs_id = ${verlosungs_id}`, [result[0].user_id, today, false, getTimeStamp(14), verlosungs_id]);
                        con.query(`SELECT * FROM Users WHERE user_id = ${result[0].user_id}`, function (err, result, fields) {

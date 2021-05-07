@@ -4,22 +4,26 @@ import {
     BOT_USERNAME,
     CHANNEL_ID,
     CHANNEL_NAME,
-    CLIENT_ID,
+    CLIENT_ID, CLIENT_SECRET,
     OAUTH_TOKEN, USER_ID
 } from "./constants";
-import axios from "axios";
 import mysql from "mysql";
 import {customModeratorCommands} from "./modcommands";
 import {filterTwitchChat} from "./botbehaviour";
 import {customMixedcommands} from "./mixedcommands";
 import {talkResponseTwitchChat} from "./usercommands";
+import trackevents from "./events";
+import axios from "axios";
 
-/**   Get-Command with AXIOS
+const fs = require('fs');
+
+//TODO POST-Command with AXIOS https://dev.twitch.tv/docs/authentication/getting-tokens-oauth#oauth-client-credentials-flow
+/**
   GET https://id.twitch.tv/oauth2/authorize
  ?client_id=fcghlfnelymmryxnb7yio5vnxna7mf
  &redirect_uri=http://localhost
  &response_type=token
- &scope=channel:moderate+chat:edit+chat:read+channel_editor+channel:manage:broadcast
+ &scope=channel:read:redemptions+channel:read:subscriptions
  @type {client}
  */
 
@@ -27,6 +31,8 @@ import {talkResponseTwitchChat} from "./usercommands";
  * SQL Database Connection
  * @type {Connection}
  */
+
+generateToken(['channel:read:redemptions' , 'channel:read:subscriptions']);
 
 export function connectToDatabase() {
     const con = mysql.createConnection({
@@ -48,6 +54,13 @@ export function connectToDatabase() {
     return con;
 }
 
+/**
+ * EVENT subscription
+ * @type {PushSubscription}
+ */
+trackevents();
+
+
 const con = connectToDatabase();
 
 const client = new tmi.Client({
@@ -64,6 +77,9 @@ const client = new tmi.Client({
 });
 client.connect().catch(console.error);
 
+export function getClient(){
+    return client;
+}
 
 // Current Date
 export function getTimeStamp(addeddays) {
@@ -85,7 +101,7 @@ client.on('message', (channel, tags, message, self) => {
 
     if (tags.username === BOT_USERNAME) return;
 
-   //console.log(tags);
+    //console.log(tags);
 
     const badges = checkBadges(tags)
 
@@ -98,44 +114,40 @@ client.on('message', (channel, tags, message, self) => {
 
     // Check User-VIP-Expiration
     if(badges[3]){
+        con.query(`SELECT v.*, u.username from VipList v JOIN Users u ON v.user_id = u.user_id WHERE u.user_id = ${tags['user-id']}`, function (err, result) {
+            if (err) throw err;
+            if(result.length == 0){
+                con.query(`INSERT INTO VipList VALUES(?,?,?,?,?)`, [tags['user-id'], today, true, null, -1]);
+            }
+        });
         con.query(`SELECT v.*, u.username from VipList v JOIN Users u ON v.user_id = u.user_id`, function (err, result) {
             if (err) throw err;
             result.forEach(res => {
-                console.log(JSON.stringify(res));
+               // console.log(JSON.stringify(res));
                 try {
+                    if(res.expirationdate == null) {
+                        console.log(res.user_id + " " + res.username + " " + res.expirationdate)
+                        return;
+                    }
                     const expirationdate = new Date(res.expirationdate);
-
                     let currentDate = new Date();
-                    console.log(expirationdate)
+
+                    console.log(res.user_id + " " + res.username + " " + expirationdate)
+
                     if(expirationdate < currentDate){
                         console.log("VIP: EXPIRED. Removing")
                         client.say(channel, `/me @${res.username} Deine VIP-Mitgliedschaft ist leider abgelaufen. Bekomme eine Neue über Giveaways oder besonderes Verhalten. drackrLove`);
                         client.say(channel, `/unvip @${res.username}`)
                         con.query(`DELETE from VipList WHERE user_id = ${res.user_id}`)
                     }
-
                 }catch (e){
-                    try{
-                        if(res.permanent == true){
-                            console.log("VIP: permanent");
-                            return;
-                        }else{
-                            console.log("VIP: not permanent. Removing")
-                            client.say(channel, `/unvip @${res.username}`)
-                            return;
-                        }
-                    } catch (e){
-                        console.log("VIP: ERROR. Removing")
-                        client.say(channel, `/unvip @${res.username}`)
-                        return;
-                    }
+                    console.log("VIP: ERROR. CANNOT RESOLVE")
                 }
             });
-            console.log("Result: " + JSON.stringify(result));
         });
     }
 
-    console.log("Permission: " + checkPermissions(badges));
+    //console.log("Permission: " + checkPermissions(badges));
 
     filterTwitchChat(channel, tags, message, client)
 
@@ -192,8 +204,29 @@ export function checkPermissions(badges){
     }else if(badges[2] == 1){ // Premium
         return  4;
     }else{
-        return  5;
+        return  5; // Basic User
     }
 
 }
+
+function generateToken(scope){
+    const payload = {
+        params: {
+            client_id: CLIENT_ID,
+            client_secret: CLIENT_SECRET,
+            grant_type: 'client_credentials',
+            scope: scope
+        }
+    }
+    const data = null;
+
+    axios.post('https://id.twitch.tv/oauth2/token', data, payload)
+        .then(function (response) {
+            fs.writeFileSync(__dirname + '/constants.json', response.data.access_token);
+        })
+        .catch(function (error) {
+            console.log(error);
+        });
+}
+
 console.log('app start')

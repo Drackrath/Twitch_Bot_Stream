@@ -1,7 +1,9 @@
 import {CLIENT_ID, OAUTH_TOKEN, USER_ID, } from "./constants";
 import axios from "axios";
-import {checkBadges, checkPermissions, splitCommand} from "./app"
+import {checkBadges, checkPermissions, connectToDatabase, splitCommand} from "./app"
 import tmi from 'tmi.js'
+
+const con = connectToDatabase();
 
 function customModeratorCommands(channel, tags, message, client) {
     const commandNames =
