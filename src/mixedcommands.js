@@ -1,17 +1,25 @@
-import {checkBadges, checkPermissions, connectToDatabase, getTimeStamp, splitCommand} from "./app";
+import {checkBadges, checkPermissions, getDBConnection, getTimeStamp, splitCommand} from "./app";
 
 
-const con = connectToDatabase();
 let isrunning = false;
 let verlosungs_id = 0;
 
+let pollarray = [];
+
+let collectvotes = false;
+
+let timeout;
+
 function customMixedcommands(channel, tags, message, client){
     const today = getTimeStamp();
+    const con = getDBConnection();
 
     const commandNames =
         [
             '!verlosung',
-            '!weg'
+            '!weg',
+            '!so',
+            '!poll'
         ]
 
     const command = splitCommand(message);
@@ -19,6 +27,48 @@ function customMixedcommands(channel, tags, message, client){
 
     const permission = checkPermissions(checkBadges(tags));
 
+    console.log("LOG: " + message + "EQUALS 1 " + (message == '1'));
+
+
+    // --------------- POLL ------------
+    if(command[0] === commandNames[3]) {
+        // if(command.length < 2) return;
+        if(permission < 3) return;
+
+        if(command[1] == 'end'){
+            clearTimeout(timeout);
+        }else {
+
+            let time = parseInt(command[1]) * 1000;
+
+            if (isNaN(time)) {
+                time = 20000;
+            }
+
+            client.say(channel, `Es wurde eine Umfrage für ${time / 1000} Sekunden gestartet. Schreibe 1 oder 2 in den Chat.`);
+
+            collectvotes = true;
+            timeout = setTimeout(function () {
+                collectvotes = false;
+                const counter = [0, 0];
+                pollarray.forEach(vote => {
+                    if (vote[1] == '1') {
+                        counter[0]++
+                    }
+                    if (vote[1] == '2') {
+                        counter[1]++
+                    }
+                });
+
+                if (counter[0] != counter[1]) {
+                    client.say(channel, (counter[0] > counter[1] ? `${counter[0] / (counter[0] + counter[1]) * 100} Stimmen für 1` : `${counter[1] / (counter[0] + counter[1]) * 100} Stimmen für 2`));
+                } else {
+                    client.say(channel, "Das Ergebnis ist \"perfectly balanced as all things should be\"");
+                }
+                pollarray.length = 0;
+            }, time)
+        }
+    }
 
     //---------------- DELETE CITE ----------
     if(command[0] === commandNames[1]) {
@@ -98,6 +148,38 @@ function customMixedcommands(channel, tags, message, client){
             }catch(e){
                 client.say(channel, `/me Du nimmst bereits an der Verlosung teil! drackrNice`);
             }
+        }
+    }
+
+
+    // -------- Shout Out (so) ----------
+    if(command[0] === commandNames[2]){
+        if(permission < 5){
+            console.log("Permission granted")
+        }else{
+            client.say(channel, "Du bist nicht für diese Aktion berechtigt!");
+            return;
+        }
+        if(command[1] == ''){
+            client.say(channel, "Kanalname nicht angegeben!");
+            return;
+        }
+
+        client.say(channel, `Folge @${command[1]} hier: https://www.twitch.tv/${command[1]}! drackrLove `);
+    }
+}
+
+export function collectVotes(tags, message){
+    if(collectvotes){
+        let inarray = false;
+        pollarray.forEach(vote => {
+            if(vote[0] == tags['user-id']){
+                inarray = true;
+            }
+        })
+
+        if((message == '1' || message == '2') && !inarray){
+            pollarray.push([tags['user-id'], message])
         }
     }
 }

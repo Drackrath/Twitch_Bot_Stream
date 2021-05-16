@@ -1,16 +1,14 @@
 import tmi from 'tmi.js'
 import {
-    BLOCKED_WORDS,
     BOT_USERNAME,
-    CHANNEL_ID,
     CHANNEL_NAME,
     CLIENT_ID, CLIENT_SECRET,
-    OAUTH_TOKEN, USER_ID
+    OAUTH_TOKEN, OAUTH_TOKEN_REDEMPTIONS, USER_ID
 } from "./constants";
 import mysql from "mysql";
 import {customModeratorCommands} from "./modcommands";
 import {filterTwitchChat} from "./botbehaviour";
-import {customMixedcommands} from "./mixedcommands";
+import {collectVotes, customMixedcommands} from "./mixedcommands";
 import {talkResponseTwitchChat} from "./usercommands";
 import trackevents from "./events";
 import axios from "axios";
@@ -23,7 +21,7 @@ const fs = require('fs');
  ?client_id=fcghlfnelymmryxnb7yio5vnxna7mf
  &redirect_uri=http://localhost
  &response_type=token
- &scope=channel:read:redemptions+channel:read:subscriptions
+ &scope=channel:manage:redemptions
  @type {client}
  */
 
@@ -34,23 +32,23 @@ const fs = require('fs');
 
 generateToken(['channel:read:redemptions' , 'channel:read:subscriptions']);
 
-export function connectToDatabase() {
-    const con = mysql.createConnection({
-        host: "192.168.178.26",
-        user: "remoteuser",
-        password: "2132435465"
-    });
+const con = mysql.createConnection({
+    host: "192.168.178.26",
+    user: "remoteuser",
+    password: "2132435465"
+});
 
-    con.connect(function (err) {
+con.connect(function (err) {
+    if (err) throw err;
+    console.log("SQL-Database-Connected!");
+
+    con.query("USE twitchDB", function (err) {
         if (err) throw err;
-        console.log("SQL-Database-Connected!");
-
-        con.query("USE twitchDB", function (err, result) {
-            if (err) throw err;
-            console.log("Result: " + result);
-        });
     });
+});
 
+
+export function getDBConnection() {
     return con;
 }
 
@@ -59,9 +57,6 @@ export function connectToDatabase() {
  * @type {PushSubscription}
  */
 trackevents();
-
-
-const con = connectToDatabase();
 
 const client = new tmi.Client({
     options: { debug: true, messagesLogLevel: "info" },
@@ -105,7 +100,8 @@ client.on('message', (channel, tags, message, self) => {
 
     const badges = checkBadges(tags)
 
-    //console.log(badges);
+    console.log("TAGS: " + JSON.stringify(tags));
+    console.log("BADGES: " + badges);
 
     // Add User to Database and count Messages & Status
     con.query(`INSERT INTO Users VALUES(?,?,?,?,?,?,?,?) ON DUPLICATE KEY UPDATE 
@@ -149,7 +145,9 @@ client.on('message', (channel, tags, message, self) => {
 
     //console.log("Permission: " + checkPermissions(badges));
 
-    filterTwitchChat(channel, tags, message, client)
+    //filterTwitchChat(channel, tags, message, client)
+
+    collectVotes(tags, message);
 
     if(message.charAt(0) == '!') {
 
@@ -157,8 +155,11 @@ client.on('message', (channel, tags, message, self) => {
 
         con.query(`INSERT INTO Messages VALUES(?,?,?,?)`, [today, tags['user-id'], command[0], command[1]]);
 
+        //User-Commands
         talkResponseTwitchChat(channel, tags, message, client)
+        //Mod-Commands
         customModeratorCommands(channel, tags, message, client)
+        //Mixed-Commands
         customMixedcommands(channel,tags,message,client)
     }
 });
@@ -183,7 +184,7 @@ export function checkBadges(tags){
         false // broadcaster
     ]
 
-    try{if(tags.badges.subscriber == '1') badges[0] = true}catch{}
+    try{if(tags.badges.subscriber != '0') badges[0] = true}catch{}
     try{if(tags.mod == true) badges[1] = true}catch{}
     try{if(tags.badges.premium == '1') badges[2] = true}catch{}
     try{if(tags.badges.vip == '1') badges[3] = true}catch{}
@@ -227,6 +228,28 @@ function generateToken(scope){
         .catch(function (error) {
             console.log(error);
         });
+/*
+    const payload2 = {
+        headers:{
+            'client-id': CLIENT_ID,
+            'Authorization': 'Bearer ' + OAUTH_TOKEN_REDEMPTIONS,
+            'Content-Type': 'application/json'
+        },
+        params: {
+
+            broadcaster_id: USER_ID,
+            "title": "FLEX2",
+            cost: 50000
+        }
+    }
+
+    axios.post('https://api.twitch.tv/helix/channel_points/custom_rewards', data, payload2)
+        .then(function (response) {
+           console.log(response);
+        })
+        .catch(function (error) {
+            console.log(error);
+        });*/
 }
 
 console.log('app start')

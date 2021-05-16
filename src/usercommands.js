@@ -1,17 +1,23 @@
 //const ChessWebAPI = require('chess-web-api');
 import ChessWebAPI from "chess-web-api";
-import {connectToDatabase, splitCommand} from "./app";
+import {getDBConnection, splitCommand} from "./app";
 
 const ChessAPI = new ChessWebAPI();
-const con = connectToDatabase();
+
 
 let greedcount = 1;
 
 function talkResponseTwitchChat(channel, tags, message, client) {
+    const con = getDBConnection();
 
     const alias_discord = [
         '!discord',
         '!dc'
+    ]
+
+    const alias_list = [
+        '!list',
+        '!queue'
     ]
 
     const commandList =
@@ -32,13 +38,15 @@ function talkResponseTwitchChat(channel, tags, message, client) {
             ['!name', `/me Bekommst du nicht LUL`],
             ['!bsg', `/me Bitte keine Zugvorschläge FootYellow`],
             ['!clap', `/me Clap drackrFacepalm `],
-            ['!rank', `/me Clap drackrFacepalm ${getChessPlayer()}`],
-            ['!zitat', ``]
+            ['!elo', ``],
+            ['!zitat', ``],
+            ['!coinflip', (Math.round(Math.random())? "/me Ich gewinne!" : "/me Du verlierst!")],
+            [alias_list, ''],
+            ['!margarine', `@${tags['username']} sagt, dass alles in Margarine ist.`]
         ]
 
-
     commandList.forEach(commandTuple => {
-        if (Array.isArray(commandTuple[0]) == true) {
+        if (Array.isArray(commandTuple[0]) == true && commandTuple[1] == '') {
             commandTuple[0].forEach(alias => {
                 if (message.toLowerCase() === alias) {
                     client.say(channel, commandTuple[1]);
@@ -63,7 +71,14 @@ function talkResponseTwitchChat(channel, tags, message, client) {
                 }
                 return;
             }
+            if(commandTuple[0] == commandList[11][0]){
+                getChessPlayer(channel, client);
+            }
             client.say(channel, commandTuple[1]);
+        }else if(commandTuple[0].includes(splitcom[0])){
+            console.log("QUEUE / LIST");
+            getQueue(channel, client)
+            return;;
         }
     })
 
@@ -73,7 +88,23 @@ function talkResponseTwitchChat(channel, tags, message, client) {
 }
 
 
+
+function getQueue(channel, client) {
+    const con = getDBConnection();
+
+    let queuelist = '';
+    con.query(`SELECT q.*, u.username FROM Queue q JOIN Users u ON q.user_id = u.user_id WHERE q.isdeleted = 0`, function (err, result, fields) {
+        if (err) throw err;
+        result.forEach(user => {
+            queuelist += user.username + ', ';
+        })
+        client.say(channel, "Warteliste: " + queuelist);
+    });
+}
+
 function getRandomCite(channel, client) {
+    const con = getDBConnection();
+
     con.query(`SELECT z.*, u.username FROM Zitate z JOIN Users u ON z.user_id = u.user_id WHERE isdeleted = 0 ORDER BY RAND() LIMIT 1`, function (err, result, fields) {
         if (err) throw err;
         const user = result[0].username;
@@ -81,13 +112,13 @@ function getRandomCite(channel, client) {
         const text = result[0].text;
         const zitat_id = result[0].zitat_id;
 
-        console.log(date);
-
-        client.say(channel, ("\"" + text + "\" - " + user + " " + date.getDate() + "/" + (date.getMonth() + 1) + "/" + date.getFullYear() + " - No°" + zitat_id));
+        client.say(channel, "\"" + text + "\" - " + user + " " + (date.getFullYear() !== 9999? date.getDate() + "/" + ((date.getMonth() + 1) + "/" + date.getFullYear()) : "") + " - No°" + zitat_id);
     });
 }
 
 function getCite(channel, client, pzitat_id){
+    const con = getDBConnection();
+
     con.query(`SELECT z.*, u.username FROM Zitate z JOIN Users u ON z.user_id = u.user_id WHERE isdeleted = 0 AND z.zitat_id = ${pzitat_id}`, function (err, result, fields) {
         if (err) throw err;
         if(result[0] == null) return;
@@ -99,17 +130,24 @@ function getCite(channel, client, pzitat_id){
 
         console.log(date);
 
-        client.say(channel, ("\"" + text + "\" - " + user + " " + date.getDate() + "/" + (date.getMonth() + 1) + "/" + date.getFullYear() + " - No°" + zitat_id));
+        client.say(channel, ("\"" + text + "\" - " + user + " " + ((date.getFullYear() !== 9999)? (date.getDate() + "/" + ((date.getMonth() + 1) + "/" + date.getFullYear())) : "") + " - No°" + zitat_id));
     });
 }
 
-function getChessPlayer() {
+function getChessPlayer(channel, client) {
     ChessAPI.getPlayerStats('drackrath')
         .then(function(response) {
-           // console.log('Player Profile', response.body);
+            console.log('Player Profile', response.body);
+            let result = "@drackrath's chess.com elo is: ";
+            result += "Bullet: " + response.body.chess_bullet.last.rating;
+            result += " Blitz: " + response.body.chess_blitz.last.rating;
+            result += " Rapid: " + response.body.chess_rapid.last.rating;
+            console.log(result);
+            client.say(channel, result);
         }, function(err) {
            // console.error(err);
         });
 }
+
 
 export {talkResponseTwitchChat}

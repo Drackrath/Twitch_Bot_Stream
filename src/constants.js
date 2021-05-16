@@ -1,10 +1,11 @@
 export const CHANNEL_NAME = '#drackrath';
 export const OAUTH_TOKEN = 'gl4w937x57r1t1wdv9womkng837ciu';
 export const OAUTH_TOKEN_PUBSUB = 'a888pcelk8uea3rrk4wv9arzmzq3d7';
+export const OAUTH_TOKEN_REDEMPTIONS = '4ms0qjhwaz94o8tdtg4t552qiaperm';
 export const BOT_USERNAME = 'drackrath_bot';
 export const CHANNEL_ID = '4df27254-8028-4406-8d24-253e408c0a17';
 export const CLIENT_ID = 'fcghlfnelymmryxnb7yio5vnxna7mf';
-export const CLIENT_SECRET = 'iatoigtv4b6i8vsi0fx8316dat5jkf';
+export const CLIENT_SECRET = 'koow6d4z544qzrrnm9bgmauccuikvn';
 
 //User ID is a braodcaster ID is a channel ID
 export const USER_ID = '59480007';
@@ -557,7 +558,6 @@ export const BLOCKED_WORDS = [
     'rectus',
     'reefer',
     'reetard',
-    'reich',
     'retard',
     'retarded',
     'revue',
@@ -565,7 +565,6 @@ export const BLOCKED_WORDS = [
     'ritard',
     'rtard',
     'r-tard',
-    'rum',
     'rump',
     'rumprammer',
     'ruski',

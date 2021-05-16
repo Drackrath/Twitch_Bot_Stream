@@ -1,15 +1,15 @@
 import {CLIENT_ID, OAUTH_TOKEN, USER_ID, } from "./constants";
 import axios from "axios";
-import {checkBadges, checkPermissions, connectToDatabase, splitCommand} from "./app"
+import {checkBadges, checkPermissions, getDBConnection, splitCommand} from "./app"
 import tmi from 'tmi.js'
 
-const con = connectToDatabase();
 
 function customModeratorCommands(channel, tags, message, client) {
     const commandNames =
         [
             '!raid',
-            '!title'
+            '!title',
+            '!butter'
         ]
 
     if(checkPermissions(checkBadges(tags)) > 1) return;
@@ -18,6 +18,12 @@ function customModeratorCommands(channel, tags, message, client) {
 
     console.log(command)
 
+    // --------------- BUTTER ------------
+    if(command[0] === commandNames[2]) {
+        if(command.length < 2) return;
+        client.say(channel, `@${tags['username']} sagt, dass alles in Butter ist.`);
+    }
+
     // --------------- RAID ------------
     if(command[0] === commandNames[0]) {
         if(command.length < 2) return;
@@ -25,7 +31,7 @@ function customModeratorCommands(channel, tags, message, client) {
     }
 
     // --------------- TITLE -----------
-    if(command[0] === commandNames[1]) {
+    else if(command[0] === commandNames[1]) {
         const options = {
             method: "PATCH",
             url: 'https://api.twitch.tv/helix/channels',
@@ -45,6 +51,7 @@ function customModeratorCommands(channel, tags, message, client) {
             options.params.title = "";
         }
 
+        // Abfrage Axios aktueller Titel
         axios.request(options).then(
             (response) => {
                 var result = response.data;
@@ -59,6 +66,7 @@ function customModeratorCommands(channel, tags, message, client) {
             }
         );
     }
+
 }
 
 export {customModeratorCommands};
