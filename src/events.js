@@ -169,9 +169,9 @@ export default function trackevents() {
                         console.log("WASSER MARSCH WURDE AUSGELÖST!")
                     }
                     if(result[0].reward_number == 2){
-                        let pattern = /([KDTLSBauer])+([a-h])+([1-9])+(\s\>\s)+([a-h])+([1-9])/;
+                      /*  let pattern = /([KDTLSBauer])+([a-h])+([1-9])+(\s\>\s)+([a-h])+([1-9])/;
                         console.log(pattern.test(msg.data.redemption.user_input));
-                        console.log("ZUG ZIEHEN WURDE AUSGELÖST!")
+                        console.log("ZUG ZIEHEN WURDE AUSGELÖST!") */
                     }
                     if(result[0].reward_number == 3){
 

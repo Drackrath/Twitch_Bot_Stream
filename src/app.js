@@ -12,8 +12,35 @@ import {collectVotes, customMixedcommands} from "./mixedcommands";
 import {talkResponseTwitchChat} from "./usercommands";
 import trackevents from "./events";
 import axios from "axios";
+import {checkLiveGame} from "./chesscom";
 
 const fs = require('fs');
+
+const express = require('express');
+const cors = require('cors');
+const app = express();
+
+// Middleware Express
+app.use(express.json());
+
+//enables cors
+app.use(cors({
+    'allowedHeaders': ['token', 'Content-Type'],
+    'exposedHeaders': ['token'],
+    'origin': '*',
+    'methods': 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    'preflightContinue': false
+}));
+
+app.get('/', (req, res) => {
+    res.send({message: 'API says Hello World!'});
+    console.log("Hello World triggered. API working")
+});
+
+// PORT
+const port = process.env.PORT || 4000
+app.listen(port, () => console.log('Listening on port ' + port + '...'))
+
 
 //TODO POST-Command with AXIOS https://dev.twitch.tv/docs/authentication/getting-tokens-oauth#oauth-client-credentials-flow
 /**
@@ -57,6 +84,7 @@ export function getDBConnection() {
  * @type {PushSubscription}
  */
 trackevents();
+checkLiveGame();
 
 const client = new tmi.Client({
     options: { debug: true, messagesLogLevel: "info" },

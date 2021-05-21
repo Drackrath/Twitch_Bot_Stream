@@ -27,9 +27,6 @@ function customMixedcommands(channel, tags, message, client){
 
     const permission = checkPermissions(checkBadges(tags));
 
-    console.log("LOG: " + message + "EQUALS 1 " + (message == '1'));
-
-
     // --------------- POLL ------------
     if(command[0] === commandNames[3]) {
         // if(command.length < 2) return;

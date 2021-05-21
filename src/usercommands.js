@@ -15,6 +15,11 @@ function talkResponseTwitchChat(channel, tags, message, client) {
         '!dc'
     ]
 
+    const alias_team = [
+        '!team',
+        '!club'
+    ]
+
     const alias_list = [
         '!list',
         '!queue'
@@ -41,21 +46,25 @@ function talkResponseTwitchChat(channel, tags, message, client) {
             ['!elo', ``],
             ['!zitat', ``],
             ['!coinflip', (Math.round(Math.random())? "/me Ich gewinne!" : "/me Du verlierst!")],
-            [alias_list, ''],
-            ['!margarine', `@${tags['username']} sagt, dass alles in Margarine ist.`]
+            [alias_list, null],
+            ['!margarine', `@${tags['username']} sagt, dass alles in Margarine ist.`],
+            [alias_team, `@${tags['username']} trete hier meinem Team bei: https://www.chess.com/club/drackrath`]
         ]
 
+
+    const splitcom = splitCommand(message)
+
     commandList.forEach(commandTuple => {
-        if (Array.isArray(commandTuple[0]) == true && commandTuple[1] == '') {
+        if (Array.isArray(commandTuple[0]) == true && splitcom[1] == '' && commandTuple[1] != null) {
+            console.log("Command has Aliases" + commandTuple)
             commandTuple[0].forEach(alias => {
+                console.log("Message: " + message.toLowerCase() + " Alias: " + alias + " equals: " + (message.toLowerCase() === alias))
                 if (message.toLowerCase() === alias) {
                     client.say(channel, commandTuple[1]);
+                    return;
                 }
             })
         }
-
-        const splitcom = splitCommand(message)
-
         if (splitcom[0] === commandTuple[0]) {
             if(commandTuple[0] == commandList[12][0]){
 
@@ -75,15 +84,18 @@ function talkResponseTwitchChat(channel, tags, message, client) {
                 getChessPlayer(channel, client);
             }
             client.say(channel, commandTuple[1]);
-        }else if(commandTuple[0].includes(splitcom[0])){
-            console.log("QUEUE / LIST");
-            getQueue(channel, client)
-            return;;
         }
     })
 
     if (message.toLowerCase() === commandList[3][0]) {
         greedcount++;
+        return;
+    }
+
+    if(alias_list.indexOf(message.toLowerCase()) > -1){
+        console.log("QUEUE / LIST");
+        getQueue(channel, client)
+        return;
     }
 }
 
@@ -100,6 +112,8 @@ function getQueue(channel, client) {
         })
         client.say(channel, "Warteliste: " + queuelist);
     });
+
+    return;
 }
 
 function getRandomCite(channel, client) {
