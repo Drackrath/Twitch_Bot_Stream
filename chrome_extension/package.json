@@ -1,0 +1,19 @@
+{
+  "name": "chrome-extension",
+  "version": "1.0.0",
+  "dependencies": {
+    "webpack": "^5.37.1"
+  },
+  "devDependencies": {
+    "axios": "^0.21.1",
+    "webpack-cli": "^4.7.0"
+  },
+  "main": "src/background.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": ""
+}

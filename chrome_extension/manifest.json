@@ -1,0 +1,22 @@
+{
+  "name": "chesscom-livegame-collector",
+  "version": "1.0",
+  "manifest_version" : 2,
+  "content_scripts" : [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"]
+    }
+  ],
+  "web_accessible_resources": [
+    "modules.js"
+  ],
+  "browser_action": {
+    "default_title": "Bear",
+    "default_popup": "popup.html"
+  },
+  "background": {
+    "scripts": ["background.js"]
+  },
+  "permissions": ["tabs"]
+}
