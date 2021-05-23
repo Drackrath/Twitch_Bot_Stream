@@ -3,7 +3,7 @@ import {
     BOT_USERNAME,
     CHANNEL_NAME,
     CLIENT_ID, CLIENT_SECRET,
-    OAUTH_TOKEN, OAUTH_TOKEN_REDEMPTIONS, USER_ID
+    OAUTH_TOKEN, OAUTH_TOKEN_PREDICTIONS, OAUTH_TOKEN_REDEMPTIONS, USER_ID
 } from "./constants";
 import mysql from "mysql";
 import {customModeratorCommands} from "./modcommands";
@@ -13,6 +13,7 @@ import {talkResponseTwitchChat} from "./usercommands";
 import trackevents from "./events";
 import axios from "axios";
 import {checkLiveGame} from "./chesscom";
+import fetch from 'node-fetch';
 
 const fs = require('fs');
 
@@ -20,26 +21,10 @@ const express = require('express');
 const cors = require('cors');
 const app = express();
 
-// Middleware Express
-app.use(express.json());
+const { Chess } = require('chess.js/chess')
 
-//enables cors
-app.use(cors({
-    'allowedHeaders': ['token', 'Content-Type'],
-    'exposedHeaders': ['token'],
-    'origin': '*',
-    'methods': 'GET,HEAD,PUT,PATCH,POST,DELETE',
-    'preflightContinue': false
-}));
+var stockfish = require("stockfish");
 
-app.get('/', (req, res) => {
-    res.send({message: 'API says Hello World!'});
-    console.log("Hello World triggered. API working")
-});
-
-// PORT
-const port = process.env.PORT || 4000
-app.listen(port, () => console.log('Listening on port ' + port + '...'))
 
 
 //TODO POST-Command with AXIOS https://dev.twitch.tv/docs/authentication/getting-tokens-oauth#oauth-client-credentials-flow
@@ -48,7 +33,7 @@ app.listen(port, () => console.log('Listening on port ' + port + '...'))
  ?client_id=fcghlfnelymmryxnb7yio5vnxna7mf
  &redirect_uri=http://localhost
  &response_type=token
- &scope=channel:manage:redemptions
+ &scope=channel:manage:predictions
  @type {client}
  */
 
@@ -279,5 +264,137 @@ function generateToken(scope){
             console.log(error);
         });*/
 }
+
+
+
+// Middleware Express
+app.use(express.json());
+
+//enables cors
+app.use(cors({
+    'allowedHeaders': ['token', 'Content-Type'],
+    'exposedHeaders': ['token'],
+    'origin': '*',
+    'methods': 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    'preflightContinue': false
+}));
+
+app.get('/', (req, res) => {
+    res.send({message: 'API says Hello World!'});
+    console.log("Hello World triggered. API working")
+});
+
+// User
+app.post('/newgame', (req, res) => {
+    console.log(req.body)
+    console.log("New Game Started: " + req.body.id)
+
+    let id;
+    try{
+        id = parseInt(req.body.id)
+
+        if(typeof id == 'number'){
+           // client.say(client.channels[0], "Eine neue Partie hat begonnen! Setze Kanalpunkte um abzustimmen!");
+        }else{
+            return;
+        }
+
+        const payload = {
+            headers:{
+                'client-id': CLIENT_ID,
+                'Authorization': 'Bearer ' + OAUTH_TOKEN_PREDICTIONS,
+                'Content-Type': 'application/json'
+            }
+        }
+
+        const data = {
+                broadcaster_id: USER_ID,
+                "title": "Schachpartie:",
+                "outcomes": [
+                    {
+                        "title": "Drackrath gewinnt"
+                    },
+                    {
+                        "title": "Drackrath verliert"
+                    }
+                ],
+                "prediction_window": 60,
+        }
+
+        console.log(JSON.stringify(payload))
+        console.log(JSON.stringify(data))
+
+        axios.post('https://api.twitch.tv/helix/predictions', data, payload)
+            .then(function (response) {
+                console.log(response);
+            })
+            .catch(function (error) {
+                console.log(error);
+            });
+
+    }catch (err){
+        console.log("id is not number")
+        console.log(err)
+    }
+
+    res.send(req.body);
+});
+
+// User
+app.post('/fen', (req, res) => {
+    // board defaults to the starting position when called with no parameters
+    const stock = stockfish();
+
+    const nodes = req.body.nodes
+
+    nodes.forEach(node => {
+        node.move = node.move.replace("S", "N");
+        node.move = node.move.replace("L", "B");
+        node.move = node.move.replace("D", "Q");
+        node.move = node.move.replace("T", "R");
+
+        console.log(node.move)
+    })
+
+    console.log(nodes)
+
+    const chess = new Chess()
+    nodes.forEach(node => {
+        const move =  chess.move(node.move)
+        if(move == null){
+            console.log("ERROR MOVE ON: " + JSON.stringify(node))
+        }
+    })
+    //console.log(chess.history({ verbose: true }))
+    console.log(chess.ascii())
+
+    console.log("stockfish started")
+
+    stock.postMessage("uci");
+    stock.postMessage("ucinewgame");
+    stock.postMessage("position fen " + chess.fen());
+    stock.postMessage("go depth 15");
+    stock.onmessage = function(event) {
+        const data = event.data ? event.data : event
+        try{
+            if(data.split(" ")[0] == 'bestmove'){
+                const params = {
+                    bestmove: data.split(" ")[1],
+                    ponder: data.split(" ")[3],
+                    fen: chess.fen()
+                }
+
+                res.send(params);
+                console.log(params)
+            }
+        }catch (err){
+                throw err;
+        }
+        console.log(event.data ? event.data : event);
+    };
+});
+// PORT
+const port = process.env.PORT || 4000
+app.listen(port, () => console.log('Listening on port ' + port + '...'))
 
 console.log('app start')

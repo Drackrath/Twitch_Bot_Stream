@@ -11,15 +11,20 @@
   "license": "ISC",
   "dependencies": {
     "chess-web-api": "^1.1.0",
+    "chess.js": "^0.11.0",
+    "cm-chessboard": "^3.12.6",
     "esm": "^3.2.25",
     "express": "^4.17.1",
     "mysql": "^2.18.1",
+    "node-fetch": "^2.6.1",
+    "stockfish.js": "^10.0.2",
     "tmi.js": "^1.8.3",
     "ws": "^7.4.5",
     "yarn": "^1.22.10"
   },
   "devDependencies": {
     "axios": "^0.21.1",
-    "cors": "^2.8.5"
+    "cors": "^2.8.5",
+    "stockfish": "^11.0.0"
   }
 }

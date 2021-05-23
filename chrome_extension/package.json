@@ -1,6 +1,7 @@
 {
   "name": "chrome-extension",
   "version": "1.0.0",
+  "type": "module",
   "dependencies": {
     "webpack": "^5.37.1"
   },

@@ -2,6 +2,7 @@ export const CHANNEL_NAME = '#drackrath';
 export const OAUTH_TOKEN = 'gl4w937x57r1t1wdv9womkng837ciu';
 export const OAUTH_TOKEN_PUBSUB = 'a888pcelk8uea3rrk4wv9arzmzq3d7';
 export const OAUTH_TOKEN_REDEMPTIONS = '4ms0qjhwaz94o8tdtg4t552qiaperm';
+export const OAUTH_TOKEN_PREDICTIONS = '65i4jlz3ivu8slq5cu332vjkuydp5d';
 export const BOT_USERNAME = 'drackrath_bot';
 export const CHANNEL_ID = '4df27254-8028-4406-8d24-253e408c0a17';
 export const CLIENT_ID = 'fcghlfnelymmryxnb7yio5vnxna7mf';
